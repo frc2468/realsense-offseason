@@ -19,15 +19,6 @@ rsync_map = {
     'deploy': wd + 'deploy',
 }
 
-cmd_map = {
-    'deploy': deploy,
-    'restart': restart,
-    'run': run,
-    'update_deps': update_deps,
-    'clean': clean,
-    'set_as_startup': set_as_startup,
-    'unset_as_startup': unset_as_startup,
-}
 
 def build_rsync_commands() -> list[str]:
     dn = os.path.dirname(os.path.realpath(__file__))
@@ -99,6 +90,15 @@ def update_deps():
     run_ssh_cmds(['source ' + venv_bin,
                   'pip install -r requirements.txt'])
 
+cmd_map = {
+    'deploy': deploy,
+    'restart': restart,
+    'run': run,
+    'update_deps': update_deps,
+    'clean': clean,
+    'set_as_startup': set_as_startup,
+    'unset_as_startup': unset_as_startup,
+}
 
 def main():
     parser = argparse.ArgumentParser()
