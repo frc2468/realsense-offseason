@@ -1,0 +1,114 @@
+#!/usr/bin/env python
+
+import paramiko
+
+import typing
+import argparse
+import platform
+import subprocess
+import functools
+import os
+
+host = '192.168.1.31'
+user_name = 'cflew'
+service = '2468.service'
+wd = '~/realsense-offseason'
+
+rsync_map = {
+    'src': wd + '/src',
+    'deploy': wd + 'deploy',
+}
+
+cmd_map = {
+    'deploy': deploy,
+    'restart': restart,
+    'run': run,
+    'update_deps': update_deps,
+    'clean': clean,
+    'set_as_startup': set_as_startup,
+    'unset_as_startup': unset_as_startup,
+}
+
+def build_rsync_commands() -> list[str]:
+    dn = os.path.dirname(os.path.realpath(__file__))
+    cmds = []
+    for dir, r_dir in rsync_map.items():
+        cmd = ['rsync', '-avP', os.path.join(dn, '..', dir)]
+        cmd.append(user_name + '@' + host + ':' + r_dir)
+        cmds.append(cmd)
+
+    return cmds
+
+def print_cmd(cmd: list[str]):
+    print(functools.reduce(lambda a, b: a + ' ' + b, cmd))
+
+def run_ssh_cmds(cmds: list[str]) -> list[str]:
+    ssh_client = paramiko.SSHClient()
+    ssh_client.set_missing_host_key_policy(paramiko.AutoAddPolicy())
+    ssh_client.connect(hostname=host, username=user_name)
+
+    outs = {}
+
+    for cmd in cmds:
+        stdin, stdout, stderr = ssh_client.exec_command(cmd)
+        out = stdout.read().decode().strip()
+        error = stderr.read().decode().strip()
+        if error:
+            raise Exception(''.format(error))
+        outs.append(out)
+
+    ssh_client.close()
+
+    return outs
+
+def deploy():
+    system = platform.system()
+
+    if system == 'Linux':
+        cmds = build_rsync_commands()
+        [print(cmd) for cmd in cmds]
+        [subprocess.run(cmd) for cmd in cmds]
+    elif system == 'Windows':
+        # TODO: figure out windows stuff
+        raise Exception('Platform not supported')
+    else:
+        raise Exception('Platform not supported')
+
+
+def restart():
+    run_ssh_cmds(['systemctl restart ' + service])
+
+def run():
+    deploy()
+    restart()
+
+def set_as_startup():
+    run_ssh_cmds(['systemctl enable ' + service])
+
+
+def unset_as_startup():
+    run_ssh_cmds(['systemctl disable ' + service])
+
+
+def clean():
+    run_ssh_cmds(['rm -rf ' + wd])
+
+
+def update_deps():
+    venv_bin = wd + '/venv/bin/activate'
+    run_ssh_cmds(['source ' + venv_bin,
+                  'pip install -r requirements.txt'])
+
+
+def main():
+    parser = argparse.ArgumentParser()
+    parser.add_argument('subcommand', type=str)
+    args = parser.parse_args()
+
+
+    func = cmd_map[args.subcommand]
+    func()
+
+
+if __name__ == '__main__':
+    main()

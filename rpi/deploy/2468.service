@@ -1,0 +1,14 @@
+[Unit]
+Description=Start 2468 code
+
+[Service]
+ExecStart=/home/cflew/realsense-offseason/boot.sh
+StandardOutput=syslog
+StandardError=syslog
+SyslogIdentifier=2468service
+User=cflew
+Group=cflew
+WorkingDirectory=/home/cflew/realsense-offseason
+
+[Install]
+WantedBy=basic.target
