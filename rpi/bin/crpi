@@ -24,14 +24,25 @@ def build_rsync_commands() -> list[str]:
     dn = os.path.dirname(os.path.realpath(__file__))
     cmds = []
     for dir, r_dir in rsync_map.items():
-        cmd = ['rsync', '-avP', os.path.join(dn, '..', dir)]
-        cmd.append(user_name + '@' + host + ':' + r_dir)
+        cmd = ['rsync', '-avP', os.path.join(dn, '..', dir), user_name + '@' + host + ':' + r_dir]
         cmds.append(cmd)
 
     return cmds
 
+
+def build_sftp_commands() -> list[str]:
+    dn = os.path.dirname(os.path.realpath(__file__))
+    cmds = [['sftp', user_name + '@' + host]]
+    for dir, r_dir in rsync_map.items():
+        cmd = ['put', '-r', os.path.join(dn, '..', dir), wd]
+        cmds.append(cmd)
+    cmds.append(['exit'])
+    return cmds
+
+
 def print_cmd(cmd: list[str]):
     print(functools.reduce(lambda a, b: a + ' ' + b, cmd))
+
 
 def run_ssh_cmds(cmds: list[str]) -> list[str]:
     ssh_client = paramiko.SSHClient()
@@ -52,6 +63,7 @@ def run_ssh_cmds(cmds: list[str]) -> list[str]:
 
     return outs
 
+
 def deploy():
     system = platform.system()
 
@@ -61,8 +73,10 @@ def deploy():
             print(cmd)
             subprocess.run(cmd)
     elif system == 'Windows':
-        # TODO: figure out windows stuff
-        raise Exception('Platform not supported')
+        cmds = build_sftp_commands()
+        for cmd in cmds:
+            print(cmd)
+            subprocess.run(cmd)
     else:
         raise Exception('Platform not supported')
 
@@ -70,9 +84,11 @@ def deploy():
 def restart():
     run_ssh_cmds(['systemctl restart ' + service])
 
+
 def run():
     deploy()
     restart()
+
 
 def set_as_startup():
     run_ssh_cmds(['systemctl enable ' + service])
@@ -91,6 +107,7 @@ def update_deps():
     run_ssh_cmds(['source ' + venv_bin,
                   'pip install -r requirements.txt'])
 
+
 cmd_map = {
     'deploy': deploy,
     'restart': restart,
@@ -101,11 +118,11 @@ cmd_map = {
     'unset_as_startup': unset_as_startup,
 }
 
+
 def main():
     parser = argparse.ArgumentParser()
     parser.add_argument('subcommand', type=str)
     args = parser.parse_args()
-
 
     func = cmd_map[args.subcommand]
     func()
