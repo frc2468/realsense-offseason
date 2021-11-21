@@ -8,6 +8,7 @@ import platform
 import subprocess
 import functools
 import os
+import pysftp
 
 host = '192.168.0.191'
 user_name = 'cflew'
@@ -27,16 +28,6 @@ def build_rsync_commands() -> list[str]:
         cmd = ['rsync', '-avP', os.path.join(dn, '..', dir), user_name + '@' + host + ':' + r_dir]
         cmds.append(cmd)
 
-    return cmds
-
-
-def build_sftp_commands() -> list[str]:
-    dn = os.path.dirname(os.path.realpath(__file__))
-    cmds = [['sftp', user_name + '@' + host]]
-    for dir, r_dir in rsync_map.items():
-        cmd = ['put', '-r', os.path.join(dn, '..', dir), wd]
-        cmds.append(cmd)
-    cmds.append(['exit'])
     return cmds
 
 
@@ -70,15 +61,29 @@ def deploy():
     if system == 'Linux':
         cmds = build_rsync_commands()
         for cmd in cmds:
-            print(cmd)
+            print_cmd(cmd)
             subprocess.run(cmd)
     elif system == 'Windows':
-        cmds = build_sftp_commands()
-        for cmd in cmds:
-            print(cmd)
-            subprocess.run(cmd)
+        sftp = pysftp.Connection(host, username=user_name, password='2468')
+        for directory in rsync_map.keys():
+            if sftp.exists('/home/cflew/realsense-offseason/' + directory):
+                sftp.execute('rm -rf' + ' /home/cflew/realsense-offseason/' + directory)
+            sftp.mkdir('/home/cflew/realsense-offseason/' + directory)
+            sftp.chdir('/home/cflew/realsense-offseason/' + directory)
+            sftp.put_d(os.path.join("..", directory), "")
+        sftp.close()
     else:
         raise Exception('Platform not supported')
+
+
+def get():
+    system = platform.system()
+
+    if system == 'Windows':
+        dn = os.path.dirname(os.path.realpath(__file__))
+        sftp = pysftp.Connection(host, username=user_name, password='2468')
+        sftp.chdir('/home/cflew/realsense-offseason/out')
+        sftp.get_d('.', os.path.join(dn, '..', 'out'))
 
 
 def restart():
@@ -116,6 +121,7 @@ cmd_map = {
     'clean': clean,
     'set_as_startup': set_as_startup,
     'unset_as_startup': unset_as_startup,
+    'get': get,
 }
 
 

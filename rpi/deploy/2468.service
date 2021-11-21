@@ -2,13 +2,13 @@
 Description=Start 2468 code
 
 [Service]
-ExecStart=/home/cflew/realsense-offseason/boot.sh
+ExecStart=/home/cflew/realsense-offseason/deploy/boot.sh
 StandardOutput=syslog
 StandardError=syslog
 SyslogIdentifier=2468service
 User=cflew
 Group=cflew
-WorkingDirectory=/home/cflew/realsense-offseason
+WorkingDirectory=/home/cflew/realsense-offseason/out
 
 [Install]
 WantedBy=basic.target

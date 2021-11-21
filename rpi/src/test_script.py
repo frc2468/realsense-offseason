@@ -13,7 +13,7 @@ if __name__ == '__main__':
     color_rs = frames.get_color_frame()
     color = np.asanyarray(color_rs.get_data())
 
-    result = cv2.VideoWriter('video.mp4', cv2.VideoWriter_fourcc(*'MP4V'), 20.0, (640, 480))
+    result = cv2.VideoWriter("video.mp4", cv2.VideoWriter_fourcc(*'MP4V'), 20.0, (640, 480))
 
     temporal_filter = rs.temporal_filter()
 
