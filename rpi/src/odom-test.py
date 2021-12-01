@@ -12,6 +12,8 @@ def main():
                 data = pose.get_pose_data()
                 print('Frame num: {}'.format(pose.frame_number))
                 print('Position: {}'.format(data.translation))
+
+
     finally:
         pipe.stop()
 
