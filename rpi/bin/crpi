@@ -9,7 +9,7 @@ import subprocess
 import functools
 import os
 
-host = '192.168.0.191'
+host = '192.168.4.94'
 user_name = 'cflew'
 service = '2468.service'
 wd = '~/realsense-offseason'

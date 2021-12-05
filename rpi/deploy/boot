@@ -1,4 +1,10 @@
 #!/usr/bin/env bash
 set -euo pipefail
 
-exec python /home/cflew/realsense-offseason/src/test_script.py
+# Reset usb hub
+# see https://github.com/IntelRealSense/librealsense/issues/9660
+# Due to the realsense line getting shut down (idk abt d455),
+# this issue will never get fixed
+doas uhubctl -l 2 -a cycle -d 5
+
+exec python /home/cflew/realsense-offseason/src/odom-test.py
