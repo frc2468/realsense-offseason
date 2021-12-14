@@ -15,6 +15,6 @@ endif ()
 set(CMAKE_CXX_STANDARD 20)
 set(CMAKE_CXX_STANDARD_REQUIRED TRUE)
 
-add_executable(${PROJECT_NAME} src/main.cpp)
+add_executable(${PROJECT_NAME} src/main.cpp src/pose_handler.hpp)
 
 target_link_libraries(${PROJECT_NAME} ${realsense2_LIBRARY})

@@ -1,18 +1,54 @@
 #include <iostream>
+#include <queue>
+#include <thread>
+#include <mutex>
+#include <chrono>
+
 #include <librealsense2/rs.hpp>
 
+#include "pose_handler.hpp"
 
-int main(int argc, char * argv[])try {
+const std::vector<rs2_stream> streams = {
+RS2_STREAM_POSE
+};
+
+using namespace frc2468;
+
+int main(int argc, char * argv[]) try {
+    std::queue<rs2::pose_frame> pose_queue;
+
+
+    rs2::context ctx;
+
+    for (const rs2::device&& dev : ctx.query_devices()) {
+        std::cout << dev.get_info(RS2_CAMERA_INFO_SERIAL_NUMBER) << std::endl;
+    }
+
+
     rs2::pipeline pipe;
     rs2::config cfg;
-    cfg.enable_stream(RS2_STREAM_POSE);
-    pipe.start(cfg);
+    for (const rs2_stream& stream : streams) {
+        cfg.enable_stream(stream);
+    }
+
+
+
+    std::mutex data_mutex;
+    auto callback = [&](const rs2::frame& frame) {
+        std::lock_guard<std::mutex> lock(data_mutex);
+
+        if (auto fp = frame.as<rs2::pose_frame>()) {
+            pose_queue.push(fp);
+            handle_pose_frame(pose_queue);
+        }
+    };
+
+    pipe.start(cfg, callback);
+
+
 
     while(true) {
-        rs2::frameset frames = pipe.wait_for_frames();
-        rs2::frame frame = frames.first_or_default(RS2_STREAM_POSE);
-        rs2_pose pose_sample = frame.as<rs2::pose_frame>().get_pose_data();
-        std::cout << "position (" << pose_sample.translation.x << ", " << pose_sample.translation.y << ", " << pose_sample.translation.z << std::endl;
+        std::this_thread::sleep_for(std::chrono::milliseconds(10));
     }
 
     return 0;
