@@ -1,2 +1,5 @@
 venv
 build
+cmake-build-debug
+.mypy_cache
+out/*
